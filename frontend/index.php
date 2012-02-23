@@ -138,6 +138,7 @@ if (count($getKeys) > 0) {
 <link rel=stylesheet href="css/stats.css" media=all>
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js"></script>
+<script src="js/jquery-cookie/jquery.cookie.js"></script>
 <script src="js/stats.js"></script>
 
 </head>
@@ -146,7 +147,7 @@ if (count($getKeys) > 0) {
 
 if (count($getKeys) > 0) {
   ?>
-  <div style="float: right; border-left: 1px solid #000; border-bottom: 1px solid #000; padding: 0.5em"><a href="?" id=list>list of keys</a></div>
+  <div id=menu><a href="?" id=list>list of keys</a> <a href="javascript:void(0);" id=save>save</a></div>
   <h1><?=format_html($title)?></h1>
   <?
 
@@ -242,10 +243,29 @@ if (count($getKeys) > 0) {
   <li class=folder><div class=icon>keys</div><ul>
   <?
 
-  $l = count($keys);
+  $l = count($keys) + (isset($_COOKIE['storedstats']) ? 1 : 0);
 
   foreach ($keys as $name => $node) {
     printTree($node, $name, (--$l == 0));
+  }
+
+  if (isset($_COOKIE['storedstats'])) {
+    $stored = explode(',', $_COOKIE['storedstats']);
+
+    ?>
+    <li class="folder last"><div class=icon>stored</div><ul>
+    <?
+
+    $l = count($stored);
+
+    foreach ($stored as $key) {
+      ?><li<? if (--$l == 0) { ?> class=last<? } ?>><a href="?<?=format_html($key)?>"><?=format_html($key)?></a></li><?
+    }
+
+    ?>
+    </ul>
+    </li>
+    <?
   }
 
   ?>

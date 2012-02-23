@@ -10,9 +10,22 @@ text-decoration: underline;
 
 
 
+#menu {
+float: right;
+border-left: 1px solid #000;
+border-bottom: 1px solid #000;
+padding: 0.5em;
+}
+
 #list {
 padding: 1px 0 1px 20px;
 background: url(../images/folder-open.png) left center no-repeat;
+font-weight: bold;
+}
+
+#save {
+padding-left: 5px;
+border-left: 1px dotted #000;
 font-weight: bold;
 }
 

@@ -1,0 +1,6 @@
+[submodule "frontend/js/jquery-cookie"]
+	path = frontend/js/jquery-cookie
+	url = git://github.com/carhartl/jquery-cookie.git
+[submodule "frontend/predis"]
+	path = frontend/predis
+	url = git://github.com/nrk/predis.git
