@@ -23,7 +23,21 @@ function render($what, $k, $interval, $timeFormat, $title, $desc) {
   $data = array();
 
   foreach ($keys as $key) {
-    $data[$key] = array_slice(array_merge($zeroes, $redis->lrange($key . $k, -180, -1)), -180);
+    if (is_array($key)) {
+      $sum = $zeroes;
+
+      foreach ($key[1] as $ky) {
+        $d = array_slice(array_merge($zeroes, $redis->lrange($ky . $k, -180, -1)), -180);
+
+        foreach ($d as $i => $v) {
+          $sum[$i] += $v;
+        }
+      }
+
+      $data[$key[0]] = $sum;
+    } else {
+      $data[$key] = array_slice(array_merge($zeroes, $redis->lrange($key . $k, -180, -1)), -180);
+    }
   }
 
 
@@ -94,11 +108,14 @@ function render($what, $k, $interval, $timeFormat, $title, $desc) {
 
 
 
-// Get the keys from _GET. A . in a GET is replaced by a _ so replace it back.
-$getKeys = array_map(function($key) { return str_replace('_', '.', $key); }, array_keys($_GET));
+$getKeys = explode('&', $_SERVER['QUERY_STRING']);
 
-// Reverse sort the list so all the -'s are at the end.
-rsort($getKeys);
+if (empty($getKeys[0])) {
+  $getKeys = array();
+} else {
+  // Reverse sort the list so all the -'s are at the end.
+  rsort($getKeys);
+}
 
 
 
@@ -146,13 +163,12 @@ if (count($getKeys) > 0) {
       if ($i !== false) {
         unset($keys[$i]);
       }
+    } else if (substr($key, 0, 1) == '+') {
+      $keys[] = array(substr($key, 1), array_map(function($v) { return substr($v, 0, -2); } , $redis->keys(substr($key, 1) . ':s')));
     } else {
-      $keys = array_map(function($v) { return substr($v, 0, -2); } , array_merge($keys, $redis->keys($key . ':s')));
+      $keys = array_merge($keys, array_map(function($v) { return substr($v, 0, -2); } , $redis->keys($key . ':s')));
     }
   }
-
-  sort($keys);
-
 
   render('second', ':s',       5, 'H:i:s'   , 'last 15 minutes', '5 second'); // 180 * 5 seconds = 15 minutes
   render('minute', ':m',  5 * 60, 'H:i'     , 'last 15 hours'  , '5 minute'); // 180 * 5 minutes = 15 hours

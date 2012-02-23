@@ -1,45 +1,22 @@
 'use strict';
 
-var http  = require('http');
-var os    = require('os');
-var fs    = require('fs');
-var exec  = require('child_process').exec;
-var dns   = require('dns');
-var dgram = require('dgram').createSocket('udp4');
-
+var http   = require('http');
+var os     = require('os');
+var fs     = require('fs');
+var dns    = require('dns');
+var stats  = require('./statsapi.js');
+var config = require('./config.js');
 
 var hostname = os.hostname();
 
 
-var config      = require('./config.js');
-
-// Load the local config into the global config
-!function() {
-  var localConfig = require('./config.' + hostname + '.js');
-
-  for (var key in localConfig) {
-    config[key] = localConfig[key];
-  }
-}();
-
-
-
-
-var collector = config.collector.host;
-
-// Try to lookup the connector hostname to an IP.
-// This will remove the overhead of having to do this for every UDP packed we send.
-dns.lookup(collector, function(err, address) {
-  if (err) {
-    console.log('ERROR: could not resolve collector host ' + err);
-    return;
-  }
-
-  collector = address;
+process.on('uncaughtException', function (err) {
+ console.log(err);
 });
 
-dgram.bind(config.port, '127.0.0.1');
 
+
+stats.bind(config.collector);
 
 
 
@@ -73,7 +50,8 @@ function sendDataPoints(data) {
 
   message = new Buffer(message.join(','));
 
-  dgram.send(message, 0, message.length, 9876, collector);
+  //dgram.send(message, 0, message.length, 9876, collector);
+  stats.send(message);
 }
 
 
@@ -110,8 +88,8 @@ if (config.php) { !function() {
         var served     = data[7].split(': ')[1];
 
         sendDataPoints({
-          'php.served'   : served,
-          'php.overloade': overloaded
+          'php.served'    : served,
+          'php.overloaded': overloaded
         });
       });
     }).end();
@@ -179,4 +157,9 @@ setInterval(function() {
     sendDataPoints(data);
   });
 }, 1000);
+
+
+
+
+console.log('reported started');
 
