@@ -18,13 +18,17 @@ module.exports.bind = function(c) {
 };
 
 
-module.exports.send = function (message) {
+module.exports.send = function(message) {
   if (collector === false) {
     return;
   }
 
   if (!(message instanceof Buffer)) {
     message = new Buffer(message);
+  }
+
+  if (message.length == 0) {
+    return;
   }
 
   dgram.send(message, 0, message.length, collector.port, collector.host);

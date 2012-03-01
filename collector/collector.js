@@ -87,7 +87,7 @@ dgram.createSocket('udp4', function(data) {
       console.log('ERROR: Invalid data type ' + dtp[1]);
     }
   }
-}).bind(config.port || 9876, config.ip || '0.0.0.0');
+}).bind(config.port || 9876, config.ip);
   
 
 
@@ -106,7 +106,7 @@ function process(what, into) {
     stats[what][key] = [];
 
     redisClient.rpush(key, value);
-    redisClient.ltrim(key, -180, -1);
+    redisClient.ltrim(key, -288, -1);
 
     if (into !== false) {
       // transform key:s into key:m

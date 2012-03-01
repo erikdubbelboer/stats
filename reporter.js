@@ -4,8 +4,8 @@ var http   = require('http');
 var os     = require('os');
 var fs     = require('fs');
 var dns    = require('dns');
-var stats  = require('./statsapi.js');
-var config = require('./config.js');
+var stats  = require(process.cwd() + '/statsapi.js');
+var config = require(process.cwd() + '/config.js');
 
 var hostname = os.hostname();
 
@@ -35,7 +35,7 @@ function sendDataPoints(data) {
       // The first call will send nothing and only store the points.
       var value = parseFloat(data[key]);
 
-      if (previousValues[key]) {
+      if (typeof previousValues[key] != 'undefined') {
         // Always assume it increments
         message.push(key + '.' + hostname + ':' + (value - previousValues[key]));
       }
@@ -50,7 +50,6 @@ function sendDataPoints(data) {
 
   message = new Buffer(message.join(','));
 
-  //dgram.send(message, 0, message.length, 9876, collector);
   stats.send(message);
 }
 

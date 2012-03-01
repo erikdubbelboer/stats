@@ -7,7 +7,7 @@ require 'predis/autoload.php';
 $redis = new Predis\Client('tcp://' . $config['redis']['ip'] . ':' . $config['redis']['port']);
 
 // We need this multiple times so only build it once.
-$zeroes = array_fill(0, 180, 0);
+$zeroes = array_fill(0, 288, 0);
 
 
 
@@ -27,7 +27,7 @@ function render($what, $k, $interval, $timeFormat, $title, $desc) {
       $sum = $zeroes;
 
       foreach ($key[1] as $ky) {
-        $d = array_slice(array_merge($zeroes, $redis->lrange($ky . $k, -180, -1)), -180);
+        $d = array_slice(array_merge($zeroes, $redis->lrange($ky . $k, -288, -1)), -288);
 
         foreach ($d as $i => $v) {
           $sum[$i] += $v;
@@ -36,7 +36,7 @@ function render($what, $k, $interval, $timeFormat, $title, $desc) {
 
       $data[$key[0]] = $sum;
     } else {
-      $data[$key] = array_slice(array_merge($zeroes, $redis->lrange($key . $k, -180, -1)), -180);
+      $data[$key] = array_slice(array_merge($zeroes, $redis->lrange($key . $k, -288, -1)), -288);
     }
   }
 
@@ -66,10 +66,10 @@ function render($what, $k, $interval, $timeFormat, $title, $desc) {
 
   $time = time();
 
-  for ($n = 0; $n < 180; ++$n) {
+  for ($n = 0; $n < 288; ++$n) {
     $row = array(
       'c' => array(
-        array('v' => date($timeFormat, $time - ((180 - $n) * $interval)))
+        array('v' => date($timeFormat, $time - ((288 - $n) * $interval)))
       )
     );
 
@@ -152,7 +152,7 @@ if (count($getKeys) > 0) {
   <?
 
   // Build this array just once
-  $zeroes = array_fill(0, 180, 0);
+  $zeroes = array_fill(0, 288, 0);
 
 
   $keys = array();
@@ -171,9 +171,9 @@ if (count($getKeys) > 0) {
     }
   }
 
-  render('second', ':s',       5, 'H:i:s'   , 'last 15 minutes', '5 second'); // 180 * 5 seconds = 15 minutes
-  render('minute', ':m',  5 * 60, 'H:i'     , 'last 15 hours'  , '5 minute'); // 180 * 5 minutes = 15 hours
-  render('hour'  , ':h', 60 * 60, 'd - H:00', 'last 7.5 days'  , '1 hour');   // 180 * 1 hour    = 7.5 days
+  render('second', ':s',       5, 'H:i:s'   , 'last 24 minutes', '5 second'); // 288 * 5 seconds = 24 minutes
+  render('minute', ':m',  5 * 60, 'H:i'     , 'last 24 hours'  , '5 minute'); // 288 * 5 minutes = 24 hours
+  render('hour'  , ':h', 60 * 60, 'd - H:00', 'last 12 days'   , '1 hour');   // 288 * 1 hour    = 12 days
 } else {
   $rkeys = array_map(function($v) { return substr($v, 0, -2); }, $redis->keys('*:s'));
 
@@ -251,6 +251,8 @@ if (count($getKeys) > 0) {
 
   if (isset($_COOKIE['storedstats'])) {
     $stored = explode(',', $_COOKIE['storedstats']);
+
+    sort($stored);
 
     ?>
     <li class="folder last"><div class=icon>stored</div><ul>
