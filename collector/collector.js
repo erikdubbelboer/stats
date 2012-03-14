@@ -57,40 +57,25 @@ dgram.createSocket('udp4', function(data) {
     var key = d[0] + ':s';
     var dtp = d[1].split('|'); // data|type pair
     var val = parseFloat(dtp[0]);
+      
+    if (!stats.seconds[key]) {
+      console.log('INFO: new key ' + key.substr(0, key.length - 2));
+
+      stats.seconds[key] = {data: 0, samples: 0};
+    }
 
     if (dtp.length == 1) { // data point
-      if (dtp[0] == 'd') { // delete
-        if (stats.seconds[key]) {
-          delete stats.seconds[key];
-        }
-        if (stats.minutes[key]) {
-          delete stats.minutes[key];
-        }
-        if (stats.hours[key]) {
-          delete stats.hours[key];
-        }
-      } else { // add data point
-        if (!stats.seconds[key]) {
-          console.log('INFO: new key ' + key.substr(0, key.length - 2));
-
-          stats.seconds[key] = [];
-        }
-        
-        stats.seconds[key].push(val);
-      }
+      ++stats.seconds[key].samples;
     } else if (dtp[1] == 'c') { // counter
-      if (!stats.seconds[key]) {
-        console.log('INFO: new key ' + key.substr(0, key.length - 2));
-
-        stats.seconds[key] = [0, 0, 0, 0, 0]; // 1 value and 4 zeroes so we get a 1 second average.
-      } else if (stats.seconds[key].length != 5) {
-        stats.seconds[key] = [0, 0, 0, 0, 0];
+      if (stats.seconds[key].samples != 5) {
+        stats.seconds[key].samples = 5;
       }
-
-      stats.seconds[key][0] += val;
     } else {
       console.log('ERROR: Invalid data type ' + dtp[1]);
+      val = 0;
     }
+      
+    stats.seconds[key].data += val;
   }
 }).bind(config.port || 9876, config.ip);
   
@@ -100,12 +85,8 @@ function process(what, into) {
   for (var key in stats[what]) {
     var value = 0;
 
-    if (stats[what][key].length > 0) {
-      for (var i = 0; i < stats[what][key].length; ++i) {
-        value += stats[what][key][i];
-      }
-
-      value = Math.round((value / stats[what][key].length) * 100) / 100;
+    if (stats[what][key].samples > 0) {
+      value = Math.round((stats[what][key].data / stats[what][key].samples) * 100) / 100;
     }
 
     stats[what][key] = [];
@@ -118,10 +99,11 @@ function process(what, into) {
       key = key.substr(0, key.length - 1) + into.substr(0, 1);
 
       if (!stats[into][key]) {
-        stats[into][key] = [];
+        stats[into][key] = {data: 0, samples: 0};
       }
 
-      stats[into][key].push(value);
+      stats[into][key].data += value;
+      ++stats[into][key].samples;
     }
   }
 }
