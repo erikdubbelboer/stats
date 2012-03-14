@@ -1,3 +1,6 @@
 collector/node_modules
 redis.conf
 redis.rdb
+ccollector/ccollector
+cppcollector/cppcollector
+cppcollector/jsoncpp/

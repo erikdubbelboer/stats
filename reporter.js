@@ -36,8 +36,11 @@ function sendDataPoints(data) {
       var value = parseFloat(data[key]);
 
       if (typeof previousValues[key] != 'undefined') {
-        // Always assume it increments
-        message.push(key + '.' + hostname + ':' + (value - previousValues[key]));
+        var diff = value - previousValues[key];
+
+        if (diff > 0) {
+          message.push(key + '.' + hostname + ':' + diff);
+        }
       }
 
       previousValues[key] = value;
@@ -122,7 +125,7 @@ setInterval(function() {
 
 
 // Collect disk io stats
-setInterval(function() {
+/*setInterval(function() {
   fs.readFile('/proc/diskstats', function(err, content) {
     content = content.toString('utf8').split('\n');
 
@@ -133,7 +136,7 @@ setInterval(function() {
       'os.disk.written': line[8]
     });
   });
-}, 1000);
+}, 1000);*/
 
 
 

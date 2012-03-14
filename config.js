@@ -2,7 +2,7 @@
 module.exports = {
   collector: {
     host: 'novagroup-dev',
-    port: 9876
+    port: 9976
   }
 };
 

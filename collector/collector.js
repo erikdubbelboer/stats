@@ -39,6 +39,11 @@ dgram.createSocket('udp4', function(data) {
     console.log('VERBOSE: new message "' + data + '"');
   }
 
+  // Ignore empty messages (they somehow sometimes happen).
+  if (data.length == 0) {
+    return;
+  }
+
   data = data.toString('utf8').split(',');
   
   for (var i = 0; i < data.length; ++i) {
