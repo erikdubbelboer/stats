@@ -28,7 +28,7 @@ typedef struct config_s {
 #include "config.h"
 
 
-#define BUFLEN (1024*3)
+#define BUFLEN (1024*3) // We don't expect packets bigger than this.
 
 
 typedef struct keyval_s {
@@ -217,7 +217,7 @@ int main() {
   struct sockaddr_in si_me, si_other;
   int s, l;
   socklen_t slen = sizeof(si_other);
-  char buf[BUFLEN];
+  char buf[BUFLEN + 1];
 
   if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
     printf("creating socket failed\n");

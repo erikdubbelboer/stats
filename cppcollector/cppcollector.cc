@@ -20,7 +20,7 @@
 #define CONFIG_REDIS_IP     "127.0.0.1"
 #define CONFIG_REDIS_PORT   6377
 
-#define BUFLEN (1024*3)
+#define BUFLEN (1024*3) // We don't expect packets bigger than this.
 
 
 using namespace std;
@@ -217,7 +217,7 @@ int main() {
   struct sockaddr_in si_me, si_other;
   int s, l;
   socklen_t slen = sizeof(si_other);
-  char buf[BUFLEN];
+  char buf[BUFLEN + 1];
 
   ios::sync_with_stdio(false);
 
