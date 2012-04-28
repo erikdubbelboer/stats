@@ -35,10 +35,6 @@ redisClient.keys('*', function(err, keys) {
 
 
 dgram.createSocket('udp4', function(data) {
-  if (config.verbose) {
-    console.log('VERBOSE: new message "' + data + '"');
-  }
-
   // Ignore empty messages (they somehow sometimes happen).
   if (data.length == 0) {
     return;

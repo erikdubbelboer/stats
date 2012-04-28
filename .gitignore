@@ -4,3 +4,4 @@ redis.rdb
 ccollector/ccollector
 cppcollector/cppcollector
 cppcollector/jsoncpp/
+gocollector/gocollector

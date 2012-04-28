@@ -4,3 +4,6 @@
 [submodule "frontend/predis"]
 	path = frontend/predis
 	url = git://github.com/nrk/predis.git
+[submodule "gocollector/godis"]
+	path = gocollector/godis
+	url = git://github.com/simonz05/godis.git
