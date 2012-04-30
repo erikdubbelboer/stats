@@ -15,25 +15,6 @@ var stats = {
 };
 
 
-// Load the current keys from the database
-redisClient.keys('*', function(err, keys) {
-  for (var i = 0; i < keys.length; ++i) {
-    var type = keys[i].substr(keys[i].length - 1, 1);
-
-    if ((type == 's') && (!stats.seconds[keys[i]])) {
-      stats.seconds[keys[i]] = [];
-    }
-    if ((type == 'm') && (!stats.minutes[keys[i]])) {
-      stats.minutes[keys[i]] = [];
-    }
-    if ((type == 'h') && (!stats.hours[keys[i]])) {
-      stats.hours[keys[i]] = [];
-    }
-  }
-});
-
-
-
 dgram.createSocket('udp4', function(data) {
   // Ignore empty messages (they somehow sometimes happen).
   if (data.length == 0) {
@@ -41,7 +22,7 @@ dgram.createSocket('udp4', function(data) {
   }
 
   data = data.toString('utf8').split(',');
-  
+
   for (var i = 0; i < data.length; ++i) {
     var d = data[i].split(':');
 
@@ -85,7 +66,8 @@ function process(what, into) {
       value = Math.round((stats[what][key].data / stats[what][key].samples) * 100) / 100;
     }
 
-    stats[what][key] = [];
+    stats[what][key].data    = 0;
+    stats[what][key].samples = 0;
 
     redisClient.rpush(key, value);
     redisClient.ltrim(key, -288, -1);

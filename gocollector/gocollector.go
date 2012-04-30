@@ -13,7 +13,7 @@ import (
   "io/ioutil";
   "encoding/json";
 
-	"./godis";
+  "./godis";
 )
 
 
@@ -138,7 +138,7 @@ func main() {
 
   // These will run in different threads
   go process(&seconds, &minutes, ":s",       5)
-  go process(&minutes, &hours  , ":m", 5  * 60)
+  go process(&minutes, &hours  , ":m",  5 * 60)
   go process(&hours  , nil     , ":h", 60 * 60)
 
 

@@ -283,8 +283,7 @@ int main() {
     int len = strlen(buf);
     int stt = 0;
 
-    int i;
-    for (i = 0; i < len; ++i) {
+    for (int i = 0; i < len; ++i) {
       if (buf[i] == ',') {
         buf[i] = 0;
 
@@ -297,8 +296,6 @@ int main() {
     processkey(&buf[stt]);
   }
 
-  close(s);
-
-  return 0;
+  // This will never be reached
 }
 
