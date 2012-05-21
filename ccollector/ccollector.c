@@ -152,7 +152,7 @@ void* process(void* arg) {
 
 
 void processkey(char* buf) {
-  char* val = strstr(buf, ":");
+  char* val = strchr(buf, ':');
 
   if (val == 0) {
     printf("invalid data [%s]\n", buf);
@@ -172,7 +172,7 @@ void processkey(char* buf) {
   }
   
 
-  char* sep    = strstr(val, "|");
+  char* sep    = strchr(val, '|');
   double value = 0;
 
   if (sep != 0) {
