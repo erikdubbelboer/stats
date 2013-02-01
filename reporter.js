@@ -63,7 +63,7 @@ function sendDataPoints(data) {
 
 
 // Collect lighttpd fcgi stats
-if (config.php) { !function() {
+/*if (config.php) { !function() {
   var options = {
     host  : config.php.host || '127.0.0.1',
     port  : config.php.port || 80,
@@ -97,7 +97,7 @@ if (config.php) { !function() {
       });
     }).end();
   }, 1000);
-}(); }
+}(); }*/
 
 
 
@@ -178,7 +178,7 @@ setInterval(function() {
 
 
 // Collect network stats
-setInterval(function() {
+/*setInterval(function() {
   fs.readFile('/proc/net/dev', function(err, content) {
     content  = content.toString('utf8').split('\n');
 
@@ -194,7 +194,7 @@ setInterval(function() {
 
     sendDataPoints(data);
   });
-}, 1000);
+}, 1000);*/
 
 
 

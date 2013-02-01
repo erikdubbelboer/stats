@@ -4,13 +4,13 @@
 
 #include <map>
 
-#include <netinet/in.h> // sockaddr_in
 #include <stdlib.h>     // strtod
 #include <string.h>     // strchr
 #include <errno.h>      // errno
 
 #include <boost/thread.hpp>
 #include <boost/date_time.hpp>
+#include <boost/asio.hpp>
 
 #include <hiredis/hiredis.h>
 
@@ -27,6 +27,7 @@
 
 
 using namespace std;
+using boost::asio::ip::udp;
 
 
 class counter {
@@ -86,7 +87,7 @@ void process(timeframe* what, timeframe* into, char ws, int timeout) {
         char command[1024];
 
         snprintf(command, 1024, "RPUSH %s:%c %.2f", (*i).first.c_str(), ws, value);
-        freeReplyObject(redisCommand(redis, command));
+        freeReplyObject(redisCommand(redis, command)); // Crash here
 
         snprintf(command, 1024, "LTRIM %s:%c -288 -1", (*i).first.c_str(), ws);
         freeReplyObject(redisCommand(redis, command));
@@ -189,32 +190,12 @@ bool parse_config() {
 
 
 int main() {
-  struct sockaddr_in si_me, si_other;
-  int s, l;
-  socklen_t slen = sizeof(si_other);
-  char buf[BUFLEN + 1];
-
   ios::sync_with_stdio(false);
+
 
   if (!parse_config()) {
     // parse_config will output it's own error.
     return 1;
-  }
-
-  if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-    cout << "creating socket failed" << endl;
-    return 2;
-  }
-
-  memset((void*)&si_me, 0, sizeof(si_me));
-
-  si_me.sin_family = AF_INET;
-  si_me.sin_port = htons(config.get("port", CONFIG_PORT).asInt());
-  si_me.sin_addr.s_addr = htonl(INADDR_ANY);
-
-  if (bind(s, (struct sockaddr*)&si_me, sizeof(si_me)) < 0) {
-    cout << "bind failed: " << strerror(errno) << endl;
-    return 3;
   }
 
 
@@ -235,32 +216,39 @@ int main() {
   boost::thread hours_thread  (process, &hours  , (timeframe*)NULL, 'h', 60 * 60); // Just passing NULL confuses the boost::thread template to much.
 
 
-  for (;;) {
-    l = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen);
-   
-    if (l == -1) {
-      cout << "recvfrom failed" << endl;
-      return 4;
-    }
+  try {
+    boost::asio::io_service io_service;
 
-    buf[l] = 0; // recvfrom doesn't zero terminate
+    udp::socket sock(io_service, udp::endpoint(udp::v4(), config.get("port", CONFIG_PORT).asInt()));
 
-    int len = strlen(buf);
-    int stt = 0;
 
-    for (int i = 0; i < len; ++i) {
-      if (buf[i] == ',') {
-        buf[i] = 0;
+    for (;;) {
+      char buf[BUFLEN + 1];
+      udp::endpoint sender;
 
-        processkey(&buf[stt]);
+      size_t l = sock.receive_from(boost::asio::buffer(buf, BUFLEN), sender);
 
-        stt = i + 1;
+      buf[l] = 0; // receive_from doesn't zero terminate (obviously)
+
+      int len = strlen(buf); // can be different from l when someone sends a \0 byte.
+      int stt = 0;
+
+      for (int i = 0; i < len; ++i) {
+        if (buf[i] == ',') {
+          buf[i] = 0;
+
+          processkey(&buf[stt]);
+
+          stt = i + 1;
+        }
       }
-    }
 
-    processkey(&buf[stt]);
+      processkey(&buf[stt]);
+    }
+  } catch (std::exception& e) {
+    cerr << "exception: " << e.what() << endl;
   }
 
-  // This will never be reached so we don't have to .join() our threads.
+  return 1; // If we reach this it means something has failed
 }
 

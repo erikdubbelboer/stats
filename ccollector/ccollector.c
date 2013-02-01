@@ -63,7 +63,7 @@ data_t hours;
 
 
 redisContext *redis;
-
+  
 
 keyval_t* getkey(data_t* data, char* name) {
   keyval_t* k = data->keys;
@@ -80,15 +80,10 @@ keyval_t* getkey(data_t* data, char* name) {
 }
 
 
-keyval_t* addkey(data_t* data, char* name, int dup) {
+keyval_t* addkey(data_t* data, char* name) {
   keyval_t* k = (keyval_t*)malloc(sizeof(keyval_t));
 
-  if (dup) {
-    k->name  = strdup(name);
-  } else {
-    k->name  = name;
-  }
-
+  k->name    = strdup(name);
   k->data    = 0;
   k->samples = 0;
 
@@ -96,6 +91,41 @@ keyval_t* addkey(data_t* data, char* name, int dup) {
   data->keys = k;
 
   return k;
+}
+
+
+void delkey(data_t* data, char* name, char ws) {
+  char      command[1024];
+  void*     reply;
+  keyval_t* k = data->keys;
+  keyval_t* p = 0;
+
+  while (k != 0) {
+    if (strcmp(k->name, name) == 0) {
+      if (p == 0) {
+        data->keys = k->next;
+      } else {
+        p->next = k->next;
+      }
+
+      free(k->name);
+      free(k);
+
+      break;
+    }
+
+    p = k;
+    k = k->next;
+  }
+
+  snprintf(command, sizeof(command), "DEL %s:%c", name, ws);
+  reply = redisCommand(redis, command);
+
+  if (reply == NULL) {
+    printf("error executing redis command: [%s]\n", command);
+  } else {
+    freeReplyObject(reply);
+  }
 }
 
 
@@ -147,7 +177,7 @@ void* process(void* arg) {
         keyval_t* ki = getkey(data->into, k->name);
 
         if (ki == 0) {
-          ki = addkey(data->into, k->name, 0);
+          ki = addkey(data->into, k->name);
         }
 
         ki->data += value;
@@ -177,11 +207,22 @@ void processkey(char* buf) {
   *(val++) = 0;
 
 
+  if (*val == 'd') {
+    printf("deleting key: %s\n", buf);
+
+    delkey(&seconds, buf, 's');
+    delkey(&minutes, buf, 'm');
+    delkey(&hours  , buf, 'h');
+
+    return;
+  }
+
+
   keyval_t* k = getkey(&seconds, buf);
 
   if (k == 0) {
     printf("new key: %s\n", buf);
-    k = addkey(&seconds, buf, 1);
+    k = addkey(&seconds, buf);
   }
   
 
@@ -266,6 +307,7 @@ int main() {
   pthread_create(&seconds_thread, 0, process, &seconds_data);
   pthread_create(&minutes_thread, 0, process, &minutes_data);
   pthread_create(&hours_thread  , 0, process, &hours_data);
+
 
 
   for (;;) {

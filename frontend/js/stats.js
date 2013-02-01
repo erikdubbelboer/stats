@@ -30,5 +30,17 @@ $(function() {
 
     alert('Saved');
   });
+
+  $('.deltree').click(function(e) {
+    if (!confirm('Are you sure you want to delete this whole tree and all it\'s keys?')) {
+      e.preventDefault();
+    }
+  });
+  
+  $('.delkey').click(function(e) {
+    if (!confirm('Are you sure you want to delete this key?')) {
+      e.preventDefault();
+    }
+  });
 });
 

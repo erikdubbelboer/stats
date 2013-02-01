@@ -9,6 +9,8 @@ $redis = new Predis\Client('tcp://' . $config['redis']['ip'] . ':' . $config['re
 // We need this multiple times so only build it once.
 $zeroes = array_fill(0, 288, 0);
 
+$limit = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ? $_GET['limit'] : 20;
+
 
 
 function format_html($str) {
@@ -18,7 +20,7 @@ function format_html($str) {
 
 
 function render($what, $k, $interval, $timeFormat, $title, $desc) {
-  global $redis, $zeroes, $keys;
+  global $redis, $zeroes, $keys, $limit;
 
   $data = array();
 
@@ -41,6 +43,24 @@ function render($what, $k, $interval, $timeFormat, $title, $desc) {
   }
 
 
+  //if (count($data) > 20) {
+    $totals = array_map('array_sum', $data);
+    
+    uksort($data, function($a, $b) use($totals) {
+      if ($totals[$a] == $totals[$b]) {
+        return 0;
+      }
+
+      return ($totals[$a] > $totals[$b]) ? -1 : 1;
+    });
+
+    $data = array_slice($data, 0, $limit);
+
+    //var_dump($data);
+    //die;
+  //}
+
+
   ?>
   <h2><?=$title?></h2>
   <p style="font-size: small">1 second average taken in <?=$desc?> intervals.</p>
@@ -57,7 +77,17 @@ function render($what, $k, $interval, $timeFormat, $title, $desc) {
     'rows' => array()
   );
 
+  $count = 0;
   foreach (array_keys($data) as $key) {
+    if (++$count > $limit) {
+      $graph['cols'][] = array(
+        'label' => 'Other',
+        'type'  => 'number'
+      );
+
+      break;
+    }
+
     $graph['cols'][] = array(
       'label' => $key,
       'type'  => 'number'
@@ -73,8 +103,13 @@ function render($what, $k, $interval, $timeFormat, $title, $desc) {
       )
     );
 
+    $count = 0;
     foreach ($data as $values) {
-      $row['c'][] = array('v' => floatval($values[$n]));
+      if (++$count > $limit) {
+        $row['c'][$limit]['v'] += floatval($values[$n]);
+      } else {
+        $row['c'][] = array('v' => floatval($values[$n]));
+      }
     }
 
     $graph['rows'][] = $row;
@@ -113,6 +148,10 @@ $getKeys = explode('&', $_SERVER['QUERY_STRING']);
 if (empty($getKeys[0])) {
   $getKeys = array();
 } else {
+  $getKeys = array_filter($getKeys, function($key) {
+    return (strpos($key, 'limit=') !== 0);
+  });
+
   // Reverse sort the list so all the -'s are at the end.
   rsort($getKeys);
 }
@@ -216,7 +255,9 @@ if (count($getKeys) > 0) {
       // Collapse all last folders
       ?>
       <li class="folder<? if ($isLast) { ?> last<? } if (allEmpty($keys)) { ?> collapsed<? } ?>">
-      <div class=icon><a href="?<?=format_html($prefix)?>.*"><?=format_html($prefix)?>.*</a></div>
+      <div class=icon><a href="?<?=format_html($prefix)?>.*"><?=format_html($prefix)?>.*</a>
+      <a href="delete.php?tree=<?=format_html($prefix)?>" class="deltree"><img src="images/delete.png" width="10" height="10" title="Delete tree" alt="[X]"></a>
+      </div>
       <ul>
       <?
 
@@ -228,7 +269,12 @@ if (count($getKeys) > 0) {
 
       ?></ul></li><?
     } else {
-      ?><li<? if ($isLast) { ?> class=last<? } ?>><a href="?<?=format_html($prefix)?>"><?=format_html($prefix)?></a></li><?
+      ?>
+      <li<? if ($isLast) { ?> class=last<? } ?>>
+      <a href="?<?=format_html($prefix)?>"><?=format_html($prefix)?></a>
+      <a href="delete.php?key=<?=format_html($prefix)?>" class="delkey"><img src="images/delete.png" width="10" height="10" title="Delete key" alt="[X]"></a>
+      </li>
+      <?
     }
 
     ?></li><?
